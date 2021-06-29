@@ -1,3 +1,21 @@
+Account = {balance = 0}
+function Account:new(o)
+	o = o or {}
+	setmetatable(o, self)
+	self.__index = self
+	return o
+end
+
+function Account:withdraw(v)
+	self.balance = self.balance - v
+end
+
+function Account:deposite(v)
+	self.balance = self.balance + v
+end
+
+
+
 -- generate beep audio
 local rate = 44100
 local duration = 0.25
