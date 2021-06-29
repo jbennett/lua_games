@@ -1,3 +1,23 @@
+-- generate beep audio
+local rate = 44100
+local duration = 0.25
+local freq_a = 440
+local freq_b = 440 * 2
+local samples = rate * duration
+local beep = love.sound.newSoundData(samples, rate, 16, 1)
+for i = 1, samples do
+	local t = i / rate
+	local note = ((1 - (i / samples)) * 2)
+	local note_vol = note % 1
+	local freq = note < 1 and freq_a or freq_b
+	local a = math.sin(t * freq * math.pi * 2)
+	local b = (a * a) * 2 - 1
+	local v = a * b * note_vol
+
+	beep:setSample(i - 1, 1, v)
+end
+beep = love.audio.newSource(beep)
+
 -- 
 
 function love.load()
@@ -8,6 +28,7 @@ function love.load()
 	timeUsed = 0
 	lastPom = nil
 	status = 'ready'
+	sound = false
 	
 	-- duration in seconds
 	workLength = 25 * 60
@@ -16,6 +37,7 @@ function love.load()
 	workCount = 4
 	
 	currentPOM = 0
+	pomCount = 0
 	remaining = workLength
 	
 	currentScreen = 'poms'
@@ -35,10 +57,16 @@ function love.update(dt)
 	
 	remaining = currentPOMLength() - timeUsed
 	if remaining < 1 then
+		pomCount = currentPOM % 2 == 0 and pomCount + 1 or pomCount
 		currentPOM = currentPOM + 1
 		currentPOM = currentPOM > workCount * 2 and 0 or currentPOM
 		timeUsed = 0
 		remaining = currentPOMLength()
+		
+		if sound then
+			beep:seek(0)
+			beep:play()
+		end
 	end
 end
 
@@ -50,6 +78,10 @@ function currentPOMLength()
 end
 
 function love.keypressed(key)
+	if key == 's' then
+		sound = not sound	
+	end 
+	
 	if currentScreen == 'settings' then
 		if key == 'up' then
 			if selectedSetting == 'workLength' then selectedSetting = 'return'
@@ -82,11 +114,28 @@ function love.keypressed(key)
 			elseif selectedSetting == 'return' then currentScreen = 'poms'				
 			end
 		elseif key == 'b' then selectedSetting = 'return'
+		elseif key == 'o' then
+			if selectedSetting == 'workLength' then workLength = workLength + 60
+			elseif selectedSetting == 'breakLength' then breakLength = breakLength + 60
+			elseif selectedSetting == 'longBreakLength' then longBreakLength = longBreakLength + 60
+			elseif selectedSetting == 'workCount' then workCount = workCount + 1
+			end
+		elseif key == 'l' then
+			if selectedSetting == 'workLength' then workLength = workLength > 60 and workLength - 60 or 60
+			elseif selectedSetting == 'breakLength' then breakLength = breakLength > 60 and breakLength - 60 or 60
+			elseif selectedSetting == 'longBreakLength' then longBreakLength = longBreakLength > 60 and longBreakLength - 60 or 60
+			elseif selectedSetting == 'workCount' then workCount = workCount > 1 and workCount - 1 or 1
+			end
 		end
 	elseif currentScreen == 'poms' then
 		if status == 'ready' then
 			if key == 'a' then
 				status = 'running'
+				
+				if sound then
+					beep:seek(0)
+					beep:play()
+				end
 			end
 		else
 			if key == 'a' then
@@ -139,9 +188,9 @@ function drawSettings()
 	)
 	
 	love.graphics.setColor(0, 0, 0)
-	love.graphics.print(workLength, 195, 75)
-	love.graphics.print(breakLength, 195, 100)
-	love.graphics.print(longBreakLength, 195, 125)
+	love.graphics.print(workLength / 60, 195, 75)
+	love.graphics.print(breakLength / 60, 195, 100)
+	love.graphics.print(longBreakLength / 60, 195, 125)
 	love.graphics.print(workCount, 195, 150)
 	
 	love.graphics.print('Reset', 80, 200)
@@ -294,5 +343,7 @@ function drawPomScreen()
 	love.graphics.setColor(0, 0, 0)
 	love.graphics.print('A', pomOffset - 9, 284, 0, 2, 2)
 	love.graphics.print('B', pomOffset + 62, 284, 0, 2, 2)
+	
+	love.graphics.print('POMs completed: ' .. pomCount)
 end
 
