@@ -1,0 +1,17 @@
+{
+  "actions" : {
+    "build" : {
+      "enabled" : false,
+      "script" : "# pdc pom pom.pdx"
+    },
+    "run" : {
+      "enabled" : true,
+      "script" : "#!\/bin\/bash\n\nlove \"${NOVA_LOVE_FOLDER}\"\n"
+    }
+  },
+  "environment" : {
+    "NOVA_LOVE_FOLDER" : "${FileDirname}"
+  },
+  "identifier" : "9000371F-6FD0-4B88-BA25-F63F2B67E990",
+  "openLogOnRun" : "fail"
+}
